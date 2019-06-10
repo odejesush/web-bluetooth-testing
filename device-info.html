@@ -29,11 +29,41 @@
             printGattInfo();
         }
 
+        function logBluetoothEvent(msg) {
+            console.log(msg);
+            document.getElementById('bluetooth-events-log').innerText += '\n' + msg;
+        }
+
+        function clearBluetoothEventsLog() {
+            document.getElementById('bluetooth-events-log').innerText = "";
+        }
+
+        function onAvailabilityChanged() {
+            refreshInfo();
+            logBluetoothEvent('availabilitychanged event received for bluetooth');
+        }
+        function onGattServerDisconnected() {
+            refreshInfo();
+            logBluetoothEvent(`gattserverdisconncted event received for ${device.name}`);
+        }
+
         async function connectDevice() {
+            navigator.bluetooth.addEventListener('availabilitychanged', onAvailabilityChanged);
             device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+            logBluetoothEvent('device request successful');
             printDeviceInfo();
+
             gatt = await device.gatt.connect();
+            logBluetoothEvent(`GATT connect for ${device.name} successful`);
             printGattInfo();
+            document.getElementById('disconnectButton').hidden = false;
+            device.addEventListener('gattserverdisconnected', onGattServerDisconnected);
+        }
+
+        async function disconnctDevice() {
+            if (gatt == null || gatt == undefined) return;
+            await gatt.disconnect();
+            document.getElementById('disconnectButton').hidden = true;
         }
     </script>
 </head>
@@ -42,6 +72,7 @@
     <h1>Print Web Bluetooth device info</h1>
     <input type="button" onclick="connectDevice()" value="Connect To Device" />
     <input type="button" onclick="refreshInfo()" value="Refresh Info" />
+    <input type="button" id="disconnectButton" onclick="disconnctDevice()" value="Disconnect From Device" hidden />
     <a href="index.html">back</a>
     <div>
         <h2>Device Info</h2>
@@ -68,6 +99,11 @@
                 <td id="gatt-connected"></td>
             </tr>
         </table>
+    </div>
+    <div id="log">
+        <h2>Bluetooth Events Log</h2>
+        <input type="button" value="Clear Log" onclick="clearBluetoothEventsLog()" />
+        <p id="bluetooth-events-log"></p>
     </div>
 </body>
 
