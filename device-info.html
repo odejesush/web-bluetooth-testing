@@ -10,6 +10,12 @@
             document.getElementById(cellId).innerText = data;
         }
 
+        async function printAdapterInfo() {
+            let availability = (typeof navigator.bluetooth.getAvailability == "function") ? await navigator.bluetooth
+                .getAvailability() : "getAvailability() is not defined";
+            setTableData("adapter-availability", availability);
+        }
+
         function printDeviceInfo() {
             let deviceId = device == null ? "No device connected" : device.id;
             let deviceName = device == null ? "No device connected" : device.name;
@@ -25,6 +31,7 @@
         }
 
         function refreshInfo() {
+            printAdapterInfo();
             printDeviceInfo();
             printGattInfo();
         }
@@ -42,6 +49,7 @@
             refreshInfo();
             logBluetoothEvent('availabilitychanged event received for bluetooth');
         }
+
         function onGattServerDisconnected() {
             refreshInfo();
             logBluetoothEvent(`gattserverdisconncted event received for ${device.name}`);
@@ -49,7 +57,9 @@
 
         async function connectDevice() {
             navigator.bluetooth.addEventListener('availabilitychanged', onAvailabilityChanged);
-            device = await navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+            device = await navigator.bluetooth.requestDevice({
+                acceptAllDevices: true
+            });
             logBluetoothEvent('device request successful');
             printDeviceInfo();
 
@@ -75,6 +85,13 @@
     <input type="button" id="disconnectButton" onclick="disconnctDevice()" value="Disconnect From Device" hidden />
     <a href="index.html">back</a>
     <div>
+        <h2>Adapter Info</h2>
+        <table>
+            <tr>
+                <td>Availablity</td>
+                <td id="adapter-availability"></td>
+            </tr>
+        </table>
         <h2>Device Info</h2>
         <table>
             <tr>
@@ -92,7 +109,7 @@
         </table>
     </div>
     <div id="gatt-info">
-        <h2>GATT Info</h2> 
+        <h2>GATT Info</h2>
         <table>
             <tr>
                 <td>Is connected?</td>
