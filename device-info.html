@@ -1,127 +1,148 @@
 <html>
 
 <head>
-    <title>Web Bluetooth - Print Device Info</title>
-    <script>
-        let device = null;
-        let gatt = null;
+  <title>Web Bluetooth - Print Device Info</title>
+  <script>
+    let device = null;
+    let gatt = null;
 
-        function setTableData(cellId, data) {
-            document.getElementById(cellId).innerText = data;
-        }
+    function setTableData(cellId, data) {
+      document.getElementById(cellId).innerText = data;
+    }
 
-        async function printAdapterInfo() {
-            let availability = (typeof navigator.bluetooth.getAvailability == "function") ? await navigator.bluetooth
-                .getAvailability() : "getAvailability() is not defined";
-            setTableData("adapter-availability", availability);
-        }
+    async function printAdapterInfo() {
+      try {
+        let availability =
+            (typeof navigator.bluetooth.getAvailability == "function") ?
+                await navigator.bluetooth.getAvailability() :
+                "getAvailability() is not defined";
+        setTableData("adapter-availability", availability);
+      } catch (e) {
+        console.error(e);
+      }
+    }
 
-        function printDeviceInfo() {
-            let deviceId = device == null ? "No device connected" : device.id;
-            let deviceName = device == null ? "No device connected" : device.name;
-            let deviceWatchingAdvertisements = device == null ? "No device connected" : device.watchingAdvertisements;
-            setTableData("device-id", deviceId);
-            setTableData("device-name", deviceName);
-            setTableData("device-watching-advertisements", deviceWatchingAdvertisements);
-        }
+    function printDeviceInfo() {
+      let deviceId = device == null ? "No device connected" : device.id;
+      let deviceName = device == null ? "No device connected" : device.name;
+      let deviceWatchingAdvertisements = device == null ?
+          "No device connected" : device.watchingAdvertisements;
+      setTableData("device-id", deviceId);
+      setTableData("device-name", deviceName);
+      setTableData("device-watching-advertisements",
+          deviceWatchingAdvertisements);
+    }
 
-        function printGattInfo() {
-            let gattConnected = gatt == null ? "Not GATT connected" : gatt.connected;
-            setTableData("gatt-connected", gattConnected);
-        }
+    function printGattInfo() {
+      let gattConnected = gatt == null ? "Not GATT connected" : gatt.connected;
+      setTableData("gatt-connected", gattConnected);
+    }
 
-        function refreshInfo() {
-            printAdapterInfo();
-            printDeviceInfo();
-            printGattInfo();
-        }
+    function refreshInfo() {
+      printAdapterInfo();
+      printDeviceInfo();
+      printGattInfo();
+    }
 
-        function logBluetoothEvent(msg) {
-            console.log(msg);
-            document.getElementById('bluetooth-events-log').innerText += '\n' + msg;
-        }
+    function logBluetoothEvent(msg) {
+      console.log(msg);
+      document.getElementById('bluetooth-events-log').innerText += '\n' + msg;
+    }
 
-        function clearBluetoothEventsLog() {
-            document.getElementById('bluetooth-events-log').innerText = "";
-        }
+    function clearBluetoothEventsLog() {
+      document.getElementById('bluetooth-events-log').innerText = "";
+    }
 
-        function onAvailabilityChanged() {
-            refreshInfo();
-            logBluetoothEvent('availabilitychanged event received for bluetooth');
-        }
+    function onAvailabilityChanged() {
+      refreshInfo();
+      logBluetoothEvent('availabilitychanged event received for bluetooth');
+    }
 
-        function onGattServerDisconnected() {
-            refreshInfo();
-            logBluetoothEvent(`gattserverdisconncted event received for ${device.name}`);
-        }
+    function onGattServerDisconnected() {
+      refreshInfo();
+      logBluetoothEvent(
+          `gattserverdisconncted event received for ${device.name}`);
+    }
 
-        async function connectDevice() {
-            navigator.bluetooth.addEventListener('availabilitychanged', onAvailabilityChanged);
-            device = await navigator.bluetooth.requestDevice({
-                acceptAllDevices: true
-            });
-            logBluetoothEvent('device request successful');
-            printDeviceInfo();
+    async function connectDevice() {
+      try {
+        navigator.bluetooth.addEventListener('availabilitychanged',
+            onAvailabilityChanged);
+        device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true
+        });
+        logBluetoothEvent('device request successful');
+        printDeviceInfo();
 
-            gatt = await device.gatt.connect();
-            logBluetoothEvent(`GATT connect for ${device.name} successful`);
-            printGattInfo();
-            document.getElementById('disconnectButton').hidden = false;
-            device.addEventListener('gattserverdisconnected', onGattServerDisconnected);
-        }
+        gatt = await device.gatt.connect();
+        logBluetoothEvent(`GATT connect for ${device.name} successful`);
+        printGattInfo();
+        document.getElementById('disconnectButton').hidden = false;
+        device.addEventListener('gattserverdisconnected',
+            onGattServerDisconnected);
+      } catch(e) {
+        console.log(e);
+      }
+    }
 
-        async function disconnctDevice() {
-            if (gatt == null || gatt == undefined) return;
-            await gatt.disconnect();
-            document.getElementById('disconnectButton').hidden = true;
-        }
-    </script>
+    async function disconnctDevice() {
+      try {
+        if (gatt == null || gatt == undefined) return;
+        await gatt.disconnect();
+        document.getElementById('disconnectButton').hidden = true;
+      } catch(e) {
+        console.log(e);
+      }
+    }
+  </script>
 </head>
 
 <body onload="refreshInfo()">
-    <h1>Print Web Bluetooth device info</h1>
-    <input type="button" onclick="connectDevice()" value="Connect To Device" />
-    <input type="button" onclick="refreshInfo()" value="Refresh Info" />
-    <input type="button" id="disconnectButton" onclick="disconnctDevice()" value="Disconnect From Device" hidden />
-    <a href="index.html">back</a>
-    <div>
-        <h2>Adapter Info</h2>
-        <table>
-            <tr>
-                <td>Availablity</td>
-                <td id="adapter-availability"></td>
-            </tr>
-        </table>
-        <h2>Device Info</h2>
-        <table>
-            <tr>
-                <td>Device ID</td>
-                <td id="device-id"></td>
-            </tr>
-            <tr>
-                <td>Device Name</td>
-                <td id="device-name"></td>
-            </tr>
-            <tr>
-                <td>Is watching advertisements?</td>
-                <td id="device-watching-advertisements"></td>
-            </tr>
-        </table>
-    </div>
-    <div id="gatt-info">
-        <h2>GATT Info</h2>
-        <table>
-            <tr>
-                <td>Is connected?</td>
-                <td id="gatt-connected"></td>
-            </tr>
-        </table>
-    </div>
-    <div id="log">
-        <h2>Bluetooth Events Log</h2>
-        <input type="button" value="Clear Log" onclick="clearBluetoothEventsLog()" />
-        <p id="bluetooth-events-log"></p>
-    </div>
+  <h1>Print Web Bluetooth device info</h1>
+  <input type="button" onclick="connectDevice()" value="Connect To Device" />
+  <input type="button" onclick="refreshInfo()" value="Refresh Info" />
+  <input type="button" id="disconnectButton" onclick="disconnctDevice()"
+      value="Disconnect From Device" hidden />
+  <a href="index.html">back</a>
+  <div>
+    <h2>Adapter Info</h2>
+    <table>
+      <tr>
+        <td>Availablity</td>
+        <td id="adapter-availability"></td>
+      </tr>
+    </table>
+    <h2>Device Info</h2>
+    <table>
+      <tr>
+        <td>Device ID</td>
+        <td id="device-id"></td>
+      </tr>
+      <tr>
+        <td>Device Name</td>
+        <td id="device-name"></td>
+      </tr>
+      <tr>
+        <td>Is watching advertisements?</td>
+        <td id="device-watching-advertisements"></td>
+      </tr>
+    </table>
+  </div>
+  <div id="gatt-info">
+    <h2>GATT Info</h2>
+    <table>
+      <tr>
+        <td>Is connected?</td>
+        <td id="gatt-connected"></td>
+      </tr>
+    </table>
+  </div>
+  <div id="log">
+    <h2>Bluetooth Events Log</h2>
+    <input type="button" value="Clear Log"
+        onclick="clearBluetoothEventsLog()" />
+    <p id="bluetooth-events-log"></p>
+  </div>
 </body>
 
 </html>
